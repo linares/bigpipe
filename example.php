@@ -61,14 +61,14 @@ $pagelet->add_javascript('test.js');
 echo $pagelet;
 ?>			  
 
-		<h2>Content repalce with external javascript and inline javascript</h2>
+		<h2>Content replace with external javascript and inline javascript</h2>
 		<div id="external_js2">be patient, this will be completed in the end after delayed rendering test</div>
 <?php
 $pagelet = new Pagelet('external_javascript_test2');
 $pagelet->add_javascript('test2.js');
 $pagelet->add_javascript_code("test2('external_js2', 'Ok');");
 echo $pagelet;
-?>			  
+?>
 
 			
 		<h2>Test delayed rendering (50 times)</h2>
