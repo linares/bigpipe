@@ -87,6 +87,11 @@ class Pagelet {
 	 */
 	private $bypass_container = null;
 
+	/**
+	 * Tells if the placeholder is done with a <div /> or a <span /> tag. True if span
+	 * @var boolean
+	 */
+	public $use_span = false;
 
 
 	/**
@@ -183,7 +188,11 @@ class Pagelet {
 
 	public function __toString() {
 		if (BigPipe::is_enabled()) {
-			return '<div id="' . $this->id . '"></div>';
+		   	if ($this->use_span) {
+				return '<span id="' . $this->id . '"></span>';
+			} else {			
+				return '<div id="' . $this->id . '"></div>';
+			}
 		} else {
 
 			$data = $this->get_content();

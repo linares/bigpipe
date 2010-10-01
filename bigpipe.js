@@ -243,7 +243,7 @@ var Pagelet = Class.create({
 
 		this.cssResources.each(function(pair) {
 			this.phase = 1;
-			pair.value.startLoading().bind(pair.value);
+			pair.value.startLoading();
 		});
 
 		// Check if we actually started to load any css files. if not, we can just skip ahead.
@@ -405,7 +405,7 @@ var BigPipe = {
 
 		var pagelet = new Pagelet(data);
 		this.pagelets.set(pagelet.id, pagelet);
-		pagelet.start().bind(pagelet);
+		pagelet.start();
 	},
 
 	/**
@@ -465,7 +465,7 @@ var BigPipe = {
 		this.pageletResources.each(function(pair) {
 			if (pair.value.type == 'js') {
 				something_started = true;
-				pair.value.startLoading().bind(pair.value);
+				pair.value.startLoading();
 			}
 		});
 
