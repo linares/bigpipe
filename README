@@ -1,0 +1,11 @@
+Open BigPipe implementation
+===========================
+
+This in an open bigpipe implementation which is implemented by loosely
+following facebook implementation which is describied at http://www.facebook.com/notes/facebook-engineering/bigpipe-pipelining-web-pages-for-high-performance/389414033919
+
+There's an usage example in example.php. Take a good look on it :)
+
+
+
+

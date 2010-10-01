@@ -198,6 +198,12 @@ var Pagelet = Class.create({
 	 */
 	innerHTML: "",
 
+	/**
+	 * Stores the json data between initialize() and start()
+	 * @param json
+	 */
+	json: null,
+
 	phase: 0, // Phases:
 		// 0: not started
 		// 1: loading css resources
@@ -213,18 +219,22 @@ var Pagelet = Class.create({
 	initialize: function(json) {
 		this.id = json.id;
 		this.phase = 0;
+		this.json = json;
 		this.jsCode = json.js_code;
 		this.cssResources = new Hash();
 		this.jsResources = new Hash();
 		this.innerHTML = json.innerHTML;
 
-		json.css_files.each(function(x) {
+	},
+
+	start: function() {
+		this.json.css_files.each(function(x) {
 			var cssResource = BigPipe.pageletResourceFactory(x, 'css');
 			this.attachCssResource(cssResource);
 
 		}.bind(this));
 
-		json.js_files.each(function(x) {
+		this.json.js_files.each(function(x) {
 			var jsResource = BigPipe.pageletResourceFactory(x, 'js');
 			this.attachJsResource(jsResource);
 
@@ -233,14 +243,14 @@ var Pagelet = Class.create({
 
 		this.cssResources.each(function(pair) {
 			this.phase = 1;
-			pair.value.startLoading();
+			pair.value.startLoading().bind(pair.value);
 		});
 
 		// Check if we actually started to load any css files. if not, we can just skip ahead.
 		if (this.phase == 0) {
-			this.injectInnerHTML();		
+			this.injectInnerHTML();
 		}
-
+		
 	},
 
 	/**
@@ -375,7 +385,7 @@ var BigPipe = {
 	/**
 	 * Global debugging valve for all BigPipe related stuff.
 	 */
-	debug_: false,
+	debug_: true,
 
 
 	/**
@@ -389,11 +399,13 @@ var BigPipe = {
 		// The last pagelet will have the is_last property set to true. This will signal
 		// that we can start loading javascript resources.
 		if (data.is_last != undefined && data.is_last) {
+			this.debug("This pagelet was last:", data);
 			this.phase = 1;
 		}
 
 		var pagelet = new Pagelet(data);
 		this.pagelets.set(pagelet.id, pagelet);
+		pagelet.start().bind(pagelet);
 	},
 
 	/**
@@ -453,7 +465,7 @@ var BigPipe = {
 		this.pageletResources.each(function(pair) {
 			if (pair.value.type == 'js') {
 				something_started = true;
-				pair.value.startLoading();
+				pair.value.startLoading().bind(pair.value);
 			}
 		});
 
@@ -461,9 +473,7 @@ var BigPipe = {
 			this.debug("No js resources in page, moving forward...");
 			this.pagelets.each(function(pair) {
 				pair.value.onJsOnload();
-
-			});
-
+			}.bind(this));
 		}
 	},
 

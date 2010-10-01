@@ -5,12 +5,21 @@
  */
 class BigPipe {
 	/**
-	 * Array which contains each pagelet definition.
-	 *  - Key is the pagelet id (also the target id in html document)
-	 *  - Value is a Pagelet
+	 * Two dimension array which contains each pagelet definition.
+	 *  - First key is the pagelet priority
+	 *  - First value is an array:
+	 *      - Key is the pagelet id (also the target id in html document)
+	 *      - Value is a Pagelet
 	 *
+	 * Using this kind of two dimension array allows us to sort the pagelets by priority and retain
+	 * the order within same priority.
 	 */
 	private static $pagelets = array();
+
+	/**
+	 * @var int Amount of pagelets inside $pagelets array
+	 */
+	private static $pagelet_count = 0;
 
 	/**
 	 * Is the BigPipe enabled or not.
@@ -103,12 +112,13 @@ class BigPipe {
 
 	/**
 	 * Adds a pagelet to BigPipe rendering
-	 * @param  $id unique id inside document. This will be used to identify a div container where the pagelet is delivered
+	 * @param  $id string id inside document. This will be used to identify a div container where the pagelet is delivered
 	 * @param Pagelet $pagelet
 	 * @return void
 	 */
 	public static function add_pagelet($id, Pagelet $pagelet) {
-		self::$pagelets[$id] = $pagelet;
+		self::$pagelets[$pagelet->priority][$id] = $pagelet;
+		self::$pagelet_count++;
 	}
 
 	/**
@@ -143,8 +153,8 @@ class BigPipe {
 
 		// BigPipe is disabled so dump the javascripts out
 		if (!self::$enabled) {
-			foreach (BigPipe::$javascripts as $source) {
-				echo BigPipe::source($source);
+			foreach (self::$javascripts as $source) {
+				echo self::source($source);
 			}
 			return;
 		}
@@ -161,29 +171,33 @@ class BigPipe {
 
 		// These two are used to count when we are rendering the last pagelet
 		$i = 0;
-		$count = count(self::$pagelets);
 
-		if (!$count) {
+
+		if (!self::$pagelet_count) {
 			return;
 		}
 		
 		// Sort all pagelets according to their priority (highest priority => rendered first)
-		uasort(self::$pagelets, 'BigPipe::pagelet_sorter');
+		ksort(self::$pagelets);
+		self::$pagelets = array_reverse(self::$pagelets);
 
+		foreach (self::$pagelets as $priority => $container) {
+			foreach ($container as $id => $pagelet) {
+				$data = $pagelet->render_data();
 
-		foreach (self::$pagelets as $id => $pagelet) {
-			$data = $pagelet->render_data();
+				if (++$i >= self::$pagelet_count) {
+					$data['is_last'] = true;
+				}
+				self::print_single_response($data);
 
-			if (++$i >= $count) {
-				$data['is_last'] = true;
-			}
-			self::print_single_response($data);
-
-			// Use global Measure item to mark a "lap" when we have rendered all high-priority items
-			if ($pagelet->priority < 10 && !$timer_stopped) {
-				global $global_meas;
-				$global_meas->lap('~');
-				$timer_stopped = true;
+				// Use global Measure item to mark a "lap" when we have rendered all high-priority items
+				if ($pagelet->priority < 10 && !$timer_stopped) {
+					global $global_meas;
+					if ($global_meas) {
+						$global_meas->lap('~');
+						$timer_stopped = true;
+					}
+				}
 			}
 		}
 
@@ -203,21 +217,15 @@ class BigPipe {
 		$uniq_counter++;
 		echo '<script id="' . $data['id'] . '_' . $uniq_counter . '">';
 		echo 'BigPipe.onArrive(';
-		echo JSON::encode($data);
+		if (class_exists('JSON')) {
+			echo JSON::encode($data);
+		} else {
+			echo json_encode($data);
+		}
 		echo ');';
 		echo "</script>\n";
 		flush();
 	}
-
-	private static function pagelet_sorter($a, $b) {
-		$a = $a->priority;
-		$b = $b->priority;
-		if ($a == $b) {
-			return 0;
-		}
-		return ($a > $b) ? -1 : 1;
-	}
-
 
 	/**
 	 * Detect bots from user agent string
