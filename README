@@ -1,10 +1,43 @@
 Open BigPipe implementation
 ===========================
 
-This in an open bigpipe implementation which is implemented by loosely
-following facebook implementation which is describied at http://www.facebook.com/notes/facebook-engineering/bigpipe-pipelining-web-pages-for-high-performance/389414033919
+This in an open bigpipe implementation written for IRC-Galleria (http://irc-galleria.net) which is implemented by
+loosely following facebook implementation describied at
+http://www.facebook.com/notes/facebook-engineering/bigpipe-pipelining-web-pages-for-high-performance/389414033919
 
-There's an usage example in example.php. Take a good look on it :)
+BigPipe allows speeding up page rendering times by loading the page in small parts called pagelets.
+This allows browser to start rendering the page while the php server is still processing to finish the rest.
+This transforms the traditional page rendering cycle into following steps:
+
+ 1) Browser requests the page from server
+ 2) Server quickly renders a page skeleton containing the <head> tags and a body with empty div elements which
+    act as containers to the pagelets. The HTTP connection to the browser stays open as the page is not yet finished.
+ 3) Browser will start downloading the bigpipe.js file and after that it'll start rendering the page
+ 4) The PHP server process is still executing and its building each pagelet at a time. Once a pagelet
+    has been completed it's results are sent to the browser inside a <script>BigPipe.onArrive(...)</script> tag.
+ 5) Browser injects the html code received into the correct place. If the pagelet needs any CSS resources those are
+    also downloaded.
+ 6) After all pagelets have been received the browser starts to load all external javascript files needed
+    by those pagelets.
+ 7) After javascripts are downloaded browser executes all inline javascripts.
+
+There's an usage example in example.php. Take a good look on it. The example uses a lot of whitespace padding to
+saturate web server and browser caches so that the bigpipe loading effect is clearly visible. Of course these
+paddings are not required in real usage.
+
+Files included:
+ - bigpipe.js Main javascript file
+ - h_bigpipe.inc BigPipe class php file
+ - h_pagelet.inc Pagelet class php file
+ - example.php Example showing how to use bigpipe
+ - test.js Support file for example
+ - test2.js Support file for example
+ - README This file
+ 
+ - Browser.php Browser detection library by Chris Schuld (http://chrisschuld.com/)
+ - prototype.js Prototypejs.org library
+ - prototypepatch.js Patches for prototype
+ 
 
 
 
