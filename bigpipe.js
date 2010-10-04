@@ -286,9 +286,6 @@ var Pagelet = Class.create({
 		if (this.phase > 3) {
 			return;
 		}
-		if (this.jsResources.length > 0) {
-			BigPipe.debug("pagelet " + this.id + " got notified that JS resource is loaded: ", x);
-		}
 
 		var allLoaded = true;
 		this.jsResources.each(function(pair) {
@@ -301,12 +298,13 @@ var Pagelet = Class.create({
 			return;
 		}
 
-		if (this.jsResources.length > 0) {
+		if (this.jsResources.size() > 0) {
 			BigPipe.debug("pagelet " + this.id + ": All JS resources are loaded");
 		}
 
 		if (this.jsCode && this.jsCode != "") {
 			try {
+			    BigPipe.debug("evaluating js code: ", this.jsCode);
 				globalEval(this.jsCode);
 			} catch (e) {
 				BigPipe.debug("Error while evaluating " + x, e);
@@ -421,6 +419,7 @@ var BigPipe = {
 	 */
 	fileLoaded: function(filename) {
 		var resource = this.pageletResources.get(filename);
+		BigPipe.debug("js file loaded", filename);
 		if (resource) {
 			resource.onComplete();
 		}
@@ -468,6 +467,13 @@ var BigPipe = {
 				pair.value.startLoading();
 			}
 		});
+
+		this.pagelets.each(function(pair) {
+			if (pair.value.jsResources.size() == 0) {
+			    pair.value.onJsOnload();
+			}
+
+		}.bind(this));
 
 		if (!something_started) {
 			this.debug("No js resources in page, moving forward...");

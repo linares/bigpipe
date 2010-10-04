@@ -24,6 +24,24 @@ function test_simple_replace($msg)
 	return "$msg <!-- $padding --><br>\n";
 }
 
+function get_google_analytics_script($code)
+{
+	ob_start();
+?>
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', '<?= $code ?>']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+<?php
+	return ob_get_clean();
+}
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -45,11 +63,24 @@ function test_simple_replace($msg)
 <?php
 	echo new Pagelet("content_replace", 'test_simple_replace', 10, array('Ok'));
 ?>
+
+		<h2>Test delayed rendering (50 times)</h2>
+<?php
+for ($i = 0; $i < 50; $i++) {
+	$pagelet = new Pagelet("counter$i", "test_delayed_rendering", 10, array($i));
+	$pagelet->use_span = true;
+	echo $pagelet;
+}
+$pagelet = new Pagelet("delayed_done", "test_simple_replace", 10, array('Ok'));
+$pagelet->use_span = true;
+echo $pagelet;
+?>
 		<h2>Content replace with inline javascript</h2>
 <?php
 // Test with a pagelet which contains additional javascript payload
 $pagelet = new Pagelet('inline_javascript_test');
-$pagelet->add_content('Ok');
+$pagelet->add_content('<div id="javascript_inline_test">Be patient, this will be completed in the end after delayed rendering</div>');
+$pagelet->add_javascript_code("$('javascript_inline_test').innerHTML = 'Ok';");
 echo $pagelet;
 ?>			  
 
@@ -68,23 +99,18 @@ $pagelet = new Pagelet('external_javascript_test2');
 $pagelet->add_javascript('test2.js');
 $pagelet->add_javascript_code("test2('external_js2', 'Ok');");
 echo $pagelet;
-?>
 
-			
-		<h2>Test delayed rendering (50 times)</h2>
-<?php
-for ($i = 0; $i < 50; $i++) {
-	$pagelet = new Pagelet("counter$i", "test_delayed_rendering", 10, array($i));
-	$pagelet->use_span = true;
-	echo $pagelet;
-}
+// Inject google analytics
+$pagelet = new Pagelet('google_analytics');
+$pagelet->add_javascript_code(get_google_analytics_script('UA-18754626-1'));
+echo $pagelet;
 
 // Test with a pagelet which contains additional javascript payload
 $pagelet = new Pagelet('final_ok');
-$pagelet->add_content('Ok');
 $pagelet->add_javascript("test.js");
-$pagelet->add_javascript_code("$('header').innerHTML = 'All done';", 11);
+$pagelet->add_javascript_code("$('header').innerHTML = 'All done';", 12);
 echo $pagelet;
+
 
 echo "</body>\n";
 BigPipe::render();
